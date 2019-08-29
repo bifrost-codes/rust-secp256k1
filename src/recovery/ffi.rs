@@ -31,6 +31,16 @@ impl RecoverableSignature {
     /// Create a new (uninitialized) signature usable for the FFI interface
     #[deprecated(since = "0.15.3", note = "Please use the new function instead")]
     pub unsafe fn blank() -> RecoverableSignature { RecoverableSignature::new() }
+
+    /// check if is a canonical signature
+    pub fn is_canonical(&self) -> bool {
+        let data = self.0;
+
+        (data[1] & 0x80 == 0)
+            && !((data[1] == 0) && (data[2] & 0x80 == 0))
+            && (data[33] & 0x80 == 0)
+            && !((data[33] == 0) && (data[34] & 0x80 == 0))
+    }
 }
 
 impl Default for RecoverableSignature {

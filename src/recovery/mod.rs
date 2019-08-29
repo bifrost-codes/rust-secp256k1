@@ -170,6 +170,37 @@ impl<C: Signing> Secp256k1<C> {
 
         RecoverableSignature::from(ret)
     }
+
+	/// See https://github.com/EOSIO/fc/blob/f4755d330faf9d2342d646a93f9a27bf68ca759e/src/crypto/elliptic_impl_priv.cpp
+    pub fn sign_canonical(&self, msg: &Message, sk: &key::SecretKey) -> RecoverableSignature {
+
+        let mut ret = ffi::RecoverableSignature::new();
+        let mut i: u32 = 0;
+        loop {
+            unsafe {
+                // We can assume the return value because it's not possible to construct
+                // an invalid signature from a valid `Message` and `SecretKey`
+                assert_eq!(
+                    ffi::secp256k1_ecdsa_sign_recoverable(
+                        self.ctx,
+                        &mut ret,
+                        msg.as_c_ptr(),
+                        sk.as_c_ptr(),
+                        super_ffi::extended_nonce_function,
+                        i as *const super::types::c_void
+                    ),
+                    1
+                );
+            }
+
+            if ret.is_canonical() {
+                break;
+            }
+            i += 1;
+        }
+
+        RecoverableSignature::from(ret)
+    }
 }
 
 impl<C: Verification> Secp256k1<C> {

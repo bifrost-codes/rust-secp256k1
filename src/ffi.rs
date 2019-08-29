@@ -30,6 +30,18 @@ pub const SECP256K1_SER_UNCOMPRESSED: c_uint = (1 << 1);
 /// Flag for keys to indicate compressed serialization format
 pub const SECP256K1_SER_COMPRESSED: c_uint = (1 << 1) | (1 << 8);
 
+/// Extended nonce function
+pub unsafe extern "C" fn extended_nonce_function(
+    nonce32: *mut c_uchar,
+    msg32: *const c_uchar,
+    key32: *const c_uchar,
+    algo16: *const c_uchar,
+    attempt: c_uint,
+    data: *const c_void)
+{
+    secp256k1_nonce_function_rfc6979(nonce32, msg32, key32, algo16, 0, attempt as *const c_void)
+}
+
 /// A nonce generation function. Ordinary users of the library
 /// never need to see this type; only if you need to control
 /// nonce generation do you need to use it. I have deliberately
@@ -105,6 +117,16 @@ impl Signature {
     /// Create a new (uninitialized) signature usable for the FFI interface
     #[deprecated(since = "0.15.3", note = "Please use the new function instead")]
     pub unsafe fn blank() -> Signature { Signature::new() }
+
+	/// See https://github.com/steemit/steem/issues/1944
+    pub fn is_canonical(&self) -> bool {
+        let data = self.0;
+
+        (data[0] & 0x80 == 0)
+            && !((data[0] == 0) && (data[1] & 0x80 == 0))
+            && (data[32] & 0x80 == 0)
+            && !((data[32] == 0) && (data[33] & 0x80 == 0))
+    }
 }
 
 impl Default for Signature {
