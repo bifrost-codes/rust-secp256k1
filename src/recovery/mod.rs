@@ -123,6 +123,16 @@ impl RecoverableSignature {
         }
         Signature(ret)
     }
+
+    /// Check if is a canonical signature
+    /// See https://github.com/steemit/steem/issues/1944
+    pub fn is_canonical(&self) -> bool {
+        let (_, ret) = self.serialize_compact();
+        (ret[0] & 0x80 == 0)
+            && !((ret[0] == 0) && (ret[1] & 0x80 == 0))
+            && (ret[32] & 0x80 == 0)
+            && !((ret[32] == 0) && (ret[33] & 0x80 == 0))
+    }
 }
 
 
@@ -193,13 +203,13 @@ impl<C: Signing> Secp256k1<C> {
                 );
             }
 
-            if ret.is_canonical() {
-                break;
+            let sig = RecoverableSignature::from(ret);
+            if sig.is_canonical() {
+                return sig;
+            } else {
+                i += 1;
             }
-            i += 1;
         }
-
-        RecoverableSignature::from(ret)
     }
 }
 
