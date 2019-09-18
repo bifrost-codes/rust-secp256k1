@@ -37,7 +37,7 @@ pub unsafe extern "C" fn extended_nonce_function(
     key32: *const c_uchar,
     algo16: *const c_uchar,
     attempt: c_uint,
-    data: *const c_void)
+    _data: *const c_void)
 {
     secp256k1_nonce_function_rfc6979(nonce32, msg32, key32, algo16, 0, attempt as *const c_void)
 }
